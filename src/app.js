@@ -8,14 +8,19 @@ const propertyRoutes = require('./routes/propertyRoutes');
 const appointmentRoutes = require('./routes/appointmentRoutes');
 const likeRoutes = require('./routes/likeRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
-const app = express();
 const cors = require('cors');
+const path = require('path');
+
+const app = express();
 
 app.use(cors()); // Enable CORS for all routes
 app.use(express.json()); // Parse JSON bodies
-
 app.use(bodyParser.json());
 
+// Serve static files
+app.use('/static', express.static(path.join(__dirname, '../static'))); // Serves files from the static directory
+
+// Routes
 app.use('/api/v1/admin', adminRoutes);
 app.use('/api/v1/user', userRoutes);
 app.use('/api/v1/properties', propertyRoutes);

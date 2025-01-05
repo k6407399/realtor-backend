@@ -1,17 +1,21 @@
+const path = require("path");
 const { Land } = require('../../models');
 
 // Create a new land property
-// Create a new land property
 const createLand = async (req, res) => {
   try {
-    // Determine who is creating the property
+    console.log("Files received:", req.files); // Debugging files
     const listedBy = req.adminId ? "admin" : "user";
     const userId = req.userId || null;
     const adminId = req.adminId || null;
 
-    // Create the land property with required fields
+    const photos = req.files?.photos?.map((file) => file.path.replace("static/", "")) || [];
+    const videos = req.files?.videos?.map((file) => file.path.replace("static/", "")) || [];
+
     const land = await Land.create({
-      ...req.body, // Include all data from the request body
+      ...req.body,
+      photos,
+      videos,
       listedBy,
       userId,
       adminId,
@@ -23,15 +27,6 @@ const createLand = async (req, res) => {
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };
-/* const createLand = async (req, res) => {
-  try {
-    const land = await Land.create(req.body); // Directly create using req.body
-    res.status(201).json({ message: 'Land created successfully', land });
-  } catch (error) {
-    console.error('Error creating land:', error);
-    res.status(500).json({ message: 'Internal Server Error', error: error.message });
-  }
-}; */
 
 // Get all lands
 const getLands = async (req, res) => {

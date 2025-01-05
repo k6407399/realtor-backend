@@ -1,15 +1,21 @@
+const path = require("path");
 const { Flats } = require('../../models');
 
+// Create a new Flat property
 const createFlat = async (req, res) => {
   try {
-    // Determine who is creating the property
     const listedBy = req.adminId ? "admin" : "user";
     const userId = req.userId || null;
     const adminId = req.adminId || null;
 
-    // Create the flat with required fields
+    // Save file paths for photos and videos
+    const photos = req.files?.photos?.map((file) => file.path.replace("static/", "")) || [];
+    const videos = req.files?.videos?.map((file) => file.path.replace("static/", "")) || [];
+
     const flat = await Flats.create({
-      ...req.body, // Include all data from the request body
+      ...req.body,
+      photos,
+      videos,
       listedBy,
       userId,
       adminId,
@@ -17,7 +23,7 @@ const createFlat = async (req, res) => {
 
     res.status(201).json({ message: "Flat created successfully", flat });
   } catch (error) {
-    console.error("Error creating flat:", error);
+    console.error("Error creating land:", error);
     res.status(500).json({ message: "Internal Server Error", error: error.message });
   }
 };

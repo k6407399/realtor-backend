@@ -1,3 +1,4 @@
+const path = require("path");
 const { Villas } = require('../../models');
 
 const createVilla = async (req, res) => {
@@ -7,9 +8,15 @@ const createVilla = async (req, res) => {
     const userId = req.userId || null;
     const adminId = req.adminId || null;
 
+    // Save file paths for photos and videos
+    const photos = req.files?.photos?.map((file) => file.path.replace("static/", "")) || [];
+    const videos = req.files?.videos?.map((file) => file.path.replace("static/", "")) || [];
+
     // Create the villa with required fields
     const villa = await Villas.create({
       ...req.body, // Include all data from the request body
+      photos,
+      videos,
       listedBy,
       userId,
       adminId,
