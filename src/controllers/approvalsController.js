@@ -1,5 +1,16 @@
 const { Land, Flats, Villas, Apartments } = require('../../models');
 
+// Helper function to validate property type
+const getPropertyModel = (type) => {
+  const models = {
+    land: Land,
+    flat: Flats,
+    villa: Villas,
+    apartment: Apartments,
+  };
+  return models[type.toLowerCase()] || null;
+};
+
 // Fetch all pending approvals
 const getPendingApprovals = async (req, res) => {
   try {
@@ -21,39 +32,30 @@ const getPendingApprovals = async (req, res) => {
 // Update the approval status of a property
 const updateApprovalStatus = async (req, res) => {
   try {
-    const { id, type } = req.params;
+    const { id, type } = req.params; // ID is now `propertyId`
     const { approvalStatus, reason } = req.body;
 
+    // Validate approval status
     if (!['Approved', 'Rejected'].includes(approvalStatus)) {
       return res.status(400).json({ message: 'Invalid approval status' });
     }
 
-    let propertyModel;
-    switch (type) {
-      case 'land':
-        propertyModel = Land;
-        break;
-      case 'flat':
-        propertyModel = Flats;
-        break;
-      case 'villa':
-        propertyModel = Villas;
-        break;
-      case 'apartment':
-        propertyModel = Apartments;
-        break;
-      default:
-        return res.status(400).json({ message: 'Invalid property type' });
+    // Get the model based on property type
+    const propertyModel = getPropertyModel(type);
+    if (!propertyModel) {
+      return res.status(400).json({ message: 'Invalid property type' });
     }
 
-    const property = await propertyModel.findByPk(id);
+    // Find property by ID
+    const property = await propertyModel.findOne({ where: { propertyId: id } });
     if (!property) {
       return res.status(404).json({ message: 'Property not found' });
     }
 
+    // Update approval status and reason (if rejected)
     property.approvalStatus = approvalStatus;
     if (approvalStatus === 'Rejected') {
-      property.reason = reason;
+      property.reason = reason || 'No reason provided';
     }
     await property.save();
 

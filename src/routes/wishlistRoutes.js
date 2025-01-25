@@ -1,15 +1,25 @@
+// src/routes/wishlistRoutes.js
 const express = require('express');
 const { addToWishlist, removeFromWishlist, getWishlist } = require('../controllers/wishlistController');
 const { authenticateUser } = require('../middlewares/authMiddleware');
 const router = express.Router();
 
-// Add a property to the wishlist
+/**
+ * POST /api/v1/wishlist
+ * Endpoint to add a property to the wishlist
+ */
 router.post('/', authenticateUser, addToWishlist);
 
-// Remove a property from the wishlist
+/**
+ * DELETE /api/v1/wishlist/:id
+ * Endpoint to remove a property from the wishlist by Wishlist ID
+ */
 router.delete('/:id', authenticateUser, removeFromWishlist);
 
-// Fetch the user's wishlist
+/**
+ * GET /api/v1/wishlist
+ * Endpoint to retrieve all wishlist items for the authenticated user
+ */
 router.get('/', authenticateUser, getWishlist);
 
 module.exports = router;

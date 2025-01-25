@@ -2,39 +2,39 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    await queryInterface.bulkInsert('Wishlists', [
+    return queryInterface.bulkInsert('Wishlists', [
       {
-        userId: 1,
+        userId: 'U0001', // Matches John Doe's ID
         propertyType: 'Land',
-        propertyId: 1,
+        propertyId: 'PL000000001',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        userId: 2,
+        userId: 'U0002', // Matches Jane Smith's ID
         propertyType: 'Flats',
-        propertyId: 2,
+        propertyId: 'PF000000002',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        userId: 3,
+        userId: 'U0003', // Matches Alice Johnson's ID
         propertyType: 'Villas',
-        propertyId: 3,
+        propertyId: 'PV000000003',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        userId: 1,
+        userId: 'U0001', // Matches John Doe's ID
         propertyType: 'Apartments',
-        propertyId: 4,
+        propertyId: 'PAB000000004',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        userId: 2,
+        userId: 'U0002', // Matches Jane Smith's ID
         propertyType: 'Land',
-        propertyId: 5,
+        propertyId: 'PL000000005',
         createdAt: new Date(),
         updatedAt: new Date(),
       },
@@ -42,6 +42,6 @@ module.exports = {
   },
 
   down: async (queryInterface, Sequelize) => {
-    await queryInterface.bulkDelete('Wishlists', null, {});
+    return queryInterface.bulkDelete('Wishlists', null, {});
   },
 };

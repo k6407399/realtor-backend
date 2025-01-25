@@ -10,6 +10,17 @@ const models = {
   Apartments: require('../../src/models/Apartments')(sequelize, Sequelize.DataTypes),
 };
 
+// Helper function to validate propertyId format
+const isValidPropertyId = (propertyType, propertyId) => {
+  const formatMap = {
+    Land: /^PL\d{9}$/,
+    Flats: /^PF\d{9}$/,
+    Villas: /^PV\d{9}$/,
+    Apartments: /^PAB\d{9}$/,
+  };
+  return formatMap[propertyType]?.test(propertyId);
+};
+
 // Book an appointment
 const bookAppointment = async (req, res) => {
   try {
@@ -19,6 +30,11 @@ const bookAppointment = async (req, res) => {
     // Validate property type
     if (!models[propertyType]) {
       return res.status(400).json({ message: 'Invalid property type' });
+    }
+
+    // Validate propertyId format
+    if (!isValidPropertyId(propertyType, propertyId)) {
+      return res.status(400).json({ message: 'Invalid property ID format' });
     }
 
     const appointment = await Appointment.create({ userId, propertyType, propertyId, date });
@@ -33,38 +49,30 @@ const bookAppointment = async (req, res) => {
 const getAppointments = async (req, res) => {
   try {
     const { view } = req.query;
-
-    // Filter logic based on 'view' (day, week, month)
-    let filter = {};
     const currentDate = new Date();
 
+    let filter = {};
     if (view === 'day') {
-      // Filter for today
-      const startOfDay = new Date(currentDate.setHours(0, 0, 0, 0)); // Start of the day
-      const endOfDay = new Date(currentDate.setHours(23, 59, 59, 999)); // End of the day
-
+      const startOfDay = new Date(currentDate.setHours(0, 0, 0, 0));
+      const endOfDay = new Date(currentDate.setHours(23, 59, 59, 999));
       filter.date = { [Op.between]: [startOfDay, endOfDay] };
     } else if (view === 'week') {
-      // Filter for this week
       const startOfWeek = new Date(currentDate);
       startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-      startOfWeek.setHours(0, 0, 0, 0); // Start of the week
-
+      startOfWeek.setHours(0, 0, 0, 0);
       const endOfWeek = new Date(startOfWeek);
       endOfWeek.setDate(startOfWeek.getDate() + 6);
-      endOfWeek.setHours(23, 59, 59, 999); // End of the week
-
+      endOfWeek.setHours(23, 59, 59, 999);
       filter.date = { [Op.between]: [startOfWeek, endOfWeek] };
     } else if (view === 'month') {
-      // Filter for this month
-      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1); // Start of the month
-      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0); // End of the month
+      const startOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+      const endOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
       endOfMonth.setHours(23, 59, 59, 999);
-
       filter.date = { [Op.between]: [startOfMonth, endOfMonth] };
+    } else {
+      return res.status(400).json({ message: 'Invalid view parameter' });
     }
 
-    // Fetch appointments with the applied filter
     const appointments = await Appointment.findAll({
       where: filter,
       include: [{ model: User, as: 'user', attributes: ['id', 'name', 'mobileNumber'] }],
@@ -98,4 +106,61 @@ const updateAppointmentStatus = async (req, res) => {
   }
 };
 
-module.exports = { bookAppointment, getAppointments, updateAppointmentStatus };
+// Book an appointment for a user
+const bookUserAppointment = async (req, res) => {
+  try {
+    const { propertyType, propertyId, date } = req.body;
+    const userId = req.user.id;
+
+    const appointment = await Appointment.create({ userId, propertyType, propertyId, date });
+    res.status(201).json({ message: 'Appointment booked successfully', appointment });
+  } catch (error) {
+    console.error('Error booking user appointment:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+// Get appointments for the logged-in user
+const getUserAppointments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const appointments = await Appointment.findAll({
+      where: { userId },
+    });
+
+    if (!appointments.length) {
+      return res.status(404).json({ message: 'No appointments found' });
+    }
+
+    res.status(200).json({ appointments });
+  } catch (error) {
+    console.error('Error fetching user appointments:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+// Update the status of an appointment
+const updateUserAppointmentStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const userId = req.user.id;
+
+    const appointment = await Appointment.findOne({ where: { id, userId } });
+
+    if (!appointment) {
+      return res.status(404).json({ message: 'Appointment not found' });
+    }
+
+    appointment.status = status;
+    await appointment.save();
+
+    res.status(200).json({ message: 'Appointment status updated successfully', appointment });
+  } catch (error) {
+    console.error('Error updating user appointment:', error);
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+module.exports = { bookAppointment, getAppointments, updateAppointmentStatus, bookUserAppointment, getUserAppointments, updateUserAppointmentStatus };

@@ -13,19 +13,28 @@ const path = require('path');
 
 const app = express();
 
-app.use(cors()); // Enable CORS for all routes
-app.use(express.json()); // Parse JSON bodies
+// Enable CORS for all routes
+app.use(cors());
+
+// Middleware for parsing JSON bodies
+app.use(express.json());
 app.use(bodyParser.json());
 
 // Serve static files
-app.use('/static', express.static(path.join(__dirname, '../static'))); // Serves files from the static directory
+app.use('/static', express.static(path.join(__dirname, '../static')));
 
 // Routes
 app.use('/api/v1/admin', adminRoutes);
-app.use('/api/v1/user', userRoutes);
-app.use('/api/v1/properties', propertyRoutes);
+app.use('/api/v1/users', userRoutes); 
+app.use('/api/v1/properties', propertyRoutes); // Handles Lands, Flats, Villas, Apartments
 app.use('/api/v1/appointments', appointmentRoutes);
 app.use('/api/v1/likes', likeRoutes);
 app.use('/api/v1/wishlist', wishlistRoutes);
+
+// Error handling middleware (Optional but recommended)
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({ message: err.message || 'Internal Server Error' });
+});
 
 module.exports = app;

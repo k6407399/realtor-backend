@@ -1,6 +1,7 @@
 // src/utils/formFields.js
 const formFieldsConfig = {
   land: [
+    { field: "propertyId", label: "Property ID", type: "text", required: false, readonly: true },
     { field: "area", label: "Area (sqft)", type: "number", required: true },
     { field: "pricePerSqft", label: "Price Per Sqft", type: "number", required: true },
     { field: "totalPrice", label: "Total Price", type: "number", required: true },
@@ -14,6 +15,7 @@ const formFieldsConfig = {
   ],
 
   flats: [
+    { field: "propertyId", label: "Property ID", type: "text", required: false, readonly: true },
     { field: "area", label: "Area (sqft)", type: "number", required: true },
     { field: "facing", label: "Facing", type: "text", required: false },
     { field: "bedrooms", label: "Bedrooms", type: "number", required: true },
@@ -35,6 +37,7 @@ const formFieldsConfig = {
   ],
 
   villas: [
+    { field: "propertyId", label: "Property ID", type: "text", required: false, readonly: true },
     { field: "area", label: "Area (sqft)", type: "number", required: true },
     { field: "facing", label: "Facing", type: "text", required: false },
     { field: "bedrooms", label: "Bedrooms", type: "number", required: true },
@@ -56,6 +59,7 @@ const formFieldsConfig = {
   ],
 
   apartments: [
+    { field: "propertyId", label: "Property ID", type: "text", required: false, readonly: true },
     { field: "area", label: "Area (sqft)", type: "number", required: true },
     { field: "facing", label: "Facing", type: "text", required: false },
     { field: "bedrooms", label: "Bedrooms", type: "number", required: true },

@@ -1,24 +1,43 @@
 const path = require("path");
-const { Land } = require('../../models');
+const { Land, Like, Wishlist } = require('../../models');
+const { v4: uuidv4 } = require('uuid'); // For generating unique IDs if needed
+
+// Utility function to generate property IDs for lands
+const generatePropertyId = () => {
+  const numericPart = Math.floor(100000000 + Math.random() * 900000000); // 9 digits
+  return `PL${numericPart}`;
+};
 
 // Create a new land property
 const createLand = async (req, res) => {
   try {
-    console.log("Files received:", req.files); // Debugging files
-    const listedBy = req.adminId ? "admin" : "user";
+    console.log("Files received:", req.files);
+
+    const listedBy = req.userId ? "user" : "admin";
     const userId = req.userId || null;
-    const adminId = req.adminId || null;
+    const adminId = req.userId ? null : 1; // Default admin ID if not uploaded by a user
+
+    const approvalStatus = listedBy === "user" ? "Pending" : "Approved";
+    const status = listedBy === "user" ? "Pending" : "Available";
 
     const photos = req.files?.photos?.map((file) => file.path.replace("static/", "")) || [];
     const videos = req.files?.videos?.map((file) => file.path.replace("static/", "")) || [];
 
+    // Generate a unique property ID for the land
+    const propertyId = generatePropertyId();
+
+    // Create the property
     const land = await Land.create({
       ...req.body,
+      propertyId,
+      propertyType: "Land", // Fixed value for this model
       photos,
       videos,
       listedBy,
       userId,
       adminId,
+      approvalStatus,
+      status,
     });
 
     res.status(201).json({ message: "Land created successfully", land });
@@ -31,7 +50,28 @@ const createLand = async (req, res) => {
 // Get all lands
 const getLands = async (req, res) => {
   try {
-    const lands = await Land.findAll(); // Fetch all land records
+    const userId = req.userId || null;
+
+    const lands = await Land.findAll();
+
+    if (userId) {
+      // Enhance properties with user-specific likes and wishlists for logged-in users
+      const enhancedLands = await Promise.all(
+        lands.map(async (land) => {
+          const isLiked = !!(await Like.findOne({ where: { userId, propertyId: land.propertyId, propertyType: 'Land' } }));
+          const isWishlisted = !!(await Wishlist.findOne({ where: { userId, propertyId: land.propertyId, propertyType: 'Land' } }));
+
+          return {
+            ...land.toJSON(),
+            isLiked,
+            isWishlisted,
+          };
+        })
+      );
+      return res.status(200).json({ lands: enhancedLands });
+    }
+
+    // If not authenticated, return lands without user-specific data
     res.status(200).json({ lands });
   } catch (error) {
     console.error('Error fetching lands:', error);
@@ -39,11 +79,11 @@ const getLands = async (req, res) => {
   }
 };
 
-// Get a single land by ID
+// Get a single land by propertyId
 const getLandById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const land = await Land.findByPk(id); // Find by primary key
+    const { id: propertyId } = req.params; // Updated to match `propertyId` instead of primary key
+    const land = await Land.findOne({ where: { propertyId } }); // Search by `propertyId`
     if (!land) {
       return res.status(404).json({ message: 'Land not found' });
     }
@@ -54,15 +94,15 @@ const getLandById = async (req, res) => {
   }
 };
 
-// Update a land record
+// Update a land record by propertyId
 const updateLand = async (req, res) => {
   try {
-    const { id } = req.params;
-    const land = await Land.findByPk(id); // Find the record
+    const { id: propertyId } = req.params;
+    const land = await Land.findOne({ where: { propertyId } }); // Search by `propertyId`
     if (!land) {
       return res.status(404).json({ message: 'Land not found' });
     }
-    await land.update(req.body); // Update with req.body
+    await land.update(req.body); // Update with `req.body`
     res.status(200).json({ message: 'Land updated successfully', land });
   } catch (error) {
     console.error('Error updating land:', error);
@@ -70,11 +110,11 @@ const updateLand = async (req, res) => {
   }
 };
 
-// Delete a land record
+// Delete a land record by propertyId
 const deleteLand = async (req, res) => {
   try {
-    const { id } = req.params;
-    const land = await Land.findByPk(id); // Find the record
+    const { id: propertyId } = req.params;
+    const land = await Land.findOne({ where: { propertyId } }); // Search by `propertyId`
     if (!land) {
       return res.status(404).json({ message: 'Land not found' });
     }

@@ -5,9 +5,8 @@ module.exports = {
   async up(queryInterface, Sequelize) {
     await queryInterface.createTable('Users', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING, // Changed from INTEGER to STRING
         allowNull: false,
-        autoIncrement: true,
         primaryKey: true,
       },
       mobileNumber: {
@@ -16,10 +15,6 @@ module.exports = {
         unique: true,
       },
       name: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
-      otp: {
         type: Sequelize.STRING,
         allowNull: true,
       },

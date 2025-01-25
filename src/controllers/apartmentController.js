@@ -1,25 +1,42 @@
 const path = require("path");
-const { Apartments } = require('../../models');
+const { Apartments, Like, Wishlist } = require('../../models');
 
+// Utility function to generate property IDs for apartments
+const generatePropertyId = () => {
+  const numericPart = Math.floor(100000000 + Math.random() * 900000000); // 9 digits
+  return `PAB${numericPart}`; // Format: PAB*********
+};
+
+// Create a new Apartment property
 const createApartment = async (req, res) => {
   try {
-    // Determine who is creating the property
-    const listedBy = req.adminId ? "admin" : "user";
-    const userId = req.userId || null;
-    const adminId = req.adminId || null;
+    console.log("Files received:", req.files);
 
-    // Save file paths for photos and videos
+    const listedBy = req.userId ? "user" : "admin";
+    const userId = req.userId || null;
+    const adminId = req.userId ? null : 1; // Default admin ID if not uploaded by a user
+
+    const approvalStatus = listedBy === "user" ? "Pending" : "Approved";
+    const status = listedBy === "user" ? "Pending" : "Available";
+
     const photos = req.files?.photos?.map((file) => file.path.replace("static/", "")) || [];
     const videos = req.files?.videos?.map((file) => file.path.replace("static/", "")) || [];
 
-    // Create the apartment with required fields
+    // Generate a unique property ID for the apartment
+    const propertyId = generatePropertyId();
+
+    // Create the property
     const apartment = await Apartments.create({
-      ...req.body, // Include all data from the request body
+      ...req.body,
+      propertyId,
+      propertyType: "Apartments", // Fixed value for this model
       photos,
       videos,
       listedBy,
       userId,
       adminId,
+      approvalStatus,
+      status,
     });
 
     res.status(201).json({ message: "Apartment created successfully", apartment });
@@ -29,9 +46,31 @@ const createApartment = async (req, res) => {
   }
 };
 
+// Get all apartments
 const getApartments = async (req, res) => {
   try {
+    const userId = req.userId || null;
+
     const apartments = await Apartments.findAll();
+
+    if (userId) {
+      // Enhance properties with user-specific likes and wishlists for logged-in users
+      const enhancedApartments = await Promise.all(
+        apartments.map(async (apartment) => {
+          const isLiked = !!(await Like.findOne({ where: { userId, propertyId: apartment.propertyId, propertyType: 'Apartments' } }));
+          const isWishlisted = !!(await Wishlist.findOne({ where: { userId, propertyId: apartment.propertyId, propertyType: 'Apartments' } }));
+
+          return {
+            ...apartment.toJSON(),
+            isLiked,
+            isWishlisted,
+          };
+        })
+      );
+      return res.status(200).json({ apartments: enhancedApartments });
+    }
+
+    // If not authenticated, return apartments without user-specific data
     res.status(200).json({ apartments });
   } catch (error) {
     console.error('Error fetching apartments:', error);
@@ -39,10 +78,11 @@ const getApartments = async (req, res) => {
   }
 };
 
+// Get a single apartment by propertyId
 const getApartmentById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const apartment = await Apartments.findByPk(id);
+    const { id: propertyId } = req.params; // Updated to match `propertyId` instead of primary key
+    const apartment = await Apartments.findOne({ where: { propertyId } }); // Search by `propertyId`
     if (!apartment) {
       return res.status(404).json({ message: 'Apartment not found' });
     }
@@ -53,10 +93,11 @@ const getApartmentById = async (req, res) => {
   }
 };
 
+// Update an apartment record by propertyId
 const updateApartment = async (req, res) => {
   try {
-    const { id } = req.params;
-    const apartment = await Apartments.findByPk(id);
+    const { id: propertyId } = req.params;
+    const apartment = await Apartments.findOne({ where: { propertyId } }); // Search by `propertyId`
     if (!apartment) {
       return res.status(404).json({ message: 'Apartment not found' });
     }
@@ -68,10 +109,11 @@ const updateApartment = async (req, res) => {
   }
 };
 
+// Delete an apartment record by propertyId
 const deleteApartment = async (req, res) => {
   try {
-    const { id } = req.params;
-    const apartment = await Apartments.findByPk(id);
+    const { id: propertyId } = req.params;
+    const apartment = await Apartments.findOne({ where: { propertyId } }); // Search by `propertyId`
     if (!apartment) {
       return res.status(404).json({ message: 'Apartment not found' });
     }
