@@ -34,6 +34,7 @@ const {
 const { getFormFields } = require("../controllers/formFieldsController");
 const upload = require("../middlewares/uploadMiddleware");
 const { authenticateUser } = require("../middlewares/authMiddleware");
+const { filterProperties, searchProperties } = require('../controllers/propertyController');
 
 const router = express.Router();
 
@@ -110,6 +111,24 @@ router.get("/apartments", getApartments);
 router.get("/apartments/:id", getApartmentById);
 router.put("/apartments/:id", updateApartment);
 router.delete("/apartments/:id", deleteApartment);
+
+/**
+ * GET /api/v1/properties/filter
+ * Endpoint to filter properties by type and price range
+ * Query Parameters:
+ * - propertyType: "Land", "Flats", "Villas", "Apartments"
+ * - minPrice: Minimum price range
+ * - maxPrice: Maximum price range
+ */
+router.get('/filter', filterProperties);
+
+/**
+ * GET /api/v1/properties/search
+ * Endpoint to search properties by query string
+ * Query Parameters:
+ * - query: Search text for location, city, state, pin code, or property type
+ */
+router.get('/search', searchProperties);
 
 // Fetch pending approvals
 router.get("/approvals", getPendingApprovals);

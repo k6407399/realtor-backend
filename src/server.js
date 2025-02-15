@@ -6,7 +6,7 @@ const PORT = process.env.PORT || 5000;
 (async () => {
   try {
     // Sync the database schema
-    await sequelize.sync({ alter: true }); // Use `force: true` for destructive resync; `alter: true` for safe schema updates
+    await sequelize.sync(); // Use `force: true` for destructive resync; `alter: true` for safe schema updates and { alter: true }
     console.log('Database connected and tables synced successfully');
 
     // Start the server
